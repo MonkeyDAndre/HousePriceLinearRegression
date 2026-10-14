@@ -15,3 +15,6 @@ data/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Workspace degli agenti
+.superpowers/
