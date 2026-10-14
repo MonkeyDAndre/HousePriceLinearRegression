@@ -86,6 +86,15 @@ def test_metriche_predizione_perfetta(ns):
     assert m == {"mse": 0.0, "rmse": 0.0, "mae": 0.0, "r2": 1.0}
 
 
+def test_metriche_caso_non_banale(ns):
+    # residui (reale - predetto): -1, 0, -1 -> SS_res = 2; SS_tot = 2 (media 2)
+    m = ns["metriche"](np.array([1.0, 2.0, 3.0]), np.array([2.0, 2.0, 4.0]))
+    assert m["mse"] == pytest.approx(2 / 3)
+    assert m["rmse"] == pytest.approx(np.sqrt(2 / 3))
+    assert m["mae"] == pytest.approx(2 / 3)
+    assert m["r2"] == pytest.approx(1 - (2 / 3 * 3) / 2)  # = 0.0
+
+
 def test_alpha_al_bordo(ns):
     griglia = {"model__alpha": [1.0, 10.0, 100.0]}
     assert ns["alpha_al_bordo"](SimpleNamespace(best_params_={"model__alpha": 1.0}, param_grid=griglia))
