@@ -90,3 +90,78 @@ ORDINE_TARGET = ["prezzo", "log(prezzo)"]
 sns.set_theme(style="whitegrid", context="notebook")
 COLORI_MODELLI = dict(zip(NOMI_MODELLI, sns.color_palette("colorblind", len(NOMI_MODELLI))))
 pd.set_option("display.float_format", lambda v: f"{v:,.4f}")
+
+# %% [markdown]
+# ## 2. Funzioni di supporto
+# Raccogliamo qui tutte le funzioni usate nel resto del notebook. Usare **le stesse funzioni per
+# ogni esperimento** garantisce che tutti i modelli siano preparati e valutati con lo stesso
+# protocollo: le differenze nei risultati dipendono dai modelli, non da dettagli di codice.
+#
+# ### 2a. Preparazione dei dati
+# - **Tre codifiche** di `furnishingstatus` (l'unica categorica con 3 livelli; le altre sono già 0/1):
+#   - `ordinal_ingenuo`: i codici del CSV così come sono (0 non arredato, 1 arredato, 2 semi-arredato),
+#     cioè con un **ordine sbagliato**;
+#   - `ordinal_corretto`: ricodifica nell'ordine naturale 0 non arredato → 1 semi → 2 arredato;
+#   - `onehot`: una colonna 0/1 per "arredato" e una per "semi-arredato", con "non arredato" come riferimento.
+# - **Standardizzazione** di tutte le feature (media 0, deviazione standard 1): la penalità della
+#   regolarizzazione dipende dalla scala delle variabili, quindi le mettiamo tutte sullo stesso metro.
+# - Tutto dentro una **Pipeline**: in cross-validation la standardizzazione viene calcolata solo sui
+#   dati di training di ciascun fold, evitando che informazioni della validazione "trapelino" nel modello.
+
+# %% tags=["helpers"]
+def crea_modello(nome):
+    """Restituisce una nuova istanza (non addestrata) del modello richiesto."""
+    if nome == "Lineare":
+        return LinearRegression()
+    if nome == "Ridge":
+        return Ridge()
+    if nome == "Lasso":
+        return Lasso(max_iter=100_000)
+    if nome == "ElasticNet":
+        return ElasticNet(max_iter=100_000)
+    raise ValueError(f"Modello sconosciuto: {nome}")
+
+
+def _ricodifica_arredamento(X):
+    """Riporta furnishingstatus nell'ordine naturale: 0 non arredato, 1 semi, 2 arredato."""
+    X = X.copy()
+    X[FURNISH_COL] = X[FURNISH_COL].map(FURNISH_CORRETTO)
+    return X
+
+
+def costruisci_preprocessore(encoding):
+    """Trasforma le 12 feature secondo la codifica scelta per furnishingstatus."""
+    if encoding == "ordinal_ingenuo":
+        trasformazione_arredo = "passthrough"
+    elif encoding == "ordinal_corretto":
+        trasformazione_arredo = FunctionTransformer(_ricodifica_arredamento, feature_names_out="one-to-one")
+    elif encoding == "onehot":
+        trasformazione_arredo = OneHotEncoder(categories=[[0, 1, 2]], drop="first", sparse_output=False)
+    else:
+        raise ValueError(f"Codifica sconosciuta: {encoding}")
+    preprocessore = ColumnTransformer(
+        [("numeriche", "passthrough", NUMERIC_COLS),
+         ("binarie", "passthrough", BINARY_COLS),
+         ("arredamento", trasformazione_arredo, [FURNISH_COL])],
+        verbose_feature_names_out=False,
+    )
+    return preprocessore.set_output(transform="pandas")
+
+
+def costruisci_pipeline(encoding, nome_modello, log_target=False):
+    """Codifica -> standardizzazione -> modello; con log_target il modello impara log(prezzo)
+    e le predizioni vengono riportate automaticamente in rupie."""
+    pipeline = Pipeline([
+        ("prep", costruisci_preprocessore(encoding)),
+        ("scaler", StandardScaler()),
+        ("model", crea_modello(nome_modello)),
+    ])
+    if log_target:
+        return TransformedTargetRegressor(regressor=pipeline, func=np.log, inverse_func=np.exp,
+                                          check_inverse=False)
+    return pipeline
+
+
+def pipeline_interna(estimatore):
+    """Restituisce la Pipeline addestrata, anche se avvolta in un TransformedTargetRegressor."""
+    return estimatore.regressor_ if isinstance(estimatore, TransformedTargetRegressor) else estimatore
