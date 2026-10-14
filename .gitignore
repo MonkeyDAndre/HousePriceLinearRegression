@@ -1,0 +1,17 @@
+# Ambiente virtuale
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+
+# Dati scaricati localmente (il notebook legge il CSV dall'URL)
+data/
+
+# Sistema
+.DS_Store
+Thumbs.db
