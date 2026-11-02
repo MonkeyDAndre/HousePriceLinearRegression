@@ -8,9 +8,7 @@ venv/
 # Python
 __pycache__/
 *.pyc
-
-# Dati scaricati localmente (il notebook legge il CSV dall'URL)
-data/
+.pytest_cache/
 
 # Sistema
 .DS_Store
@@ -18,3 +16,7 @@ Thumbs.db
 
 # Workspace degli agenti
 .superpowers/
+
+# Materiale di lavoro locale, non incluso nella consegna
+tests/
+Consegna/
