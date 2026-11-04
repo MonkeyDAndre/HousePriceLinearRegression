@@ -12,7 +12,7 @@ pesano davvero sul prezzo? Il modello sbaglia in modo sistematico su qualche fas
 
 | Percorso | Contenuto |
 |---|---|
-| `notebooks/01_confronto_modelli_regolarizzati.ipynb` | Il notebook del progetto, con codice, grafici e commenti |
+| `notebooks/Regressione_lineare_housing.ipynb` | Il notebook del progetto, con codice, grafici e commenti |
 | `housing.csv` | Il dataset della consegna (545 case, 12 caratteristiche + prezzo) |
 | `Housing_kaggle.csv` | Il dataset originale di Kaggle ([Housing Prices Dataset](https://www.kaggle.com/datasets/yasserh/housing-prices-dataset)), usato per verificare la codifica di `furnishingstatus` |
 | `docs/superpowers/specs/` | Documento di design del progetto |
@@ -27,7 +27,6 @@ pesano davvero sul prezzo? Il modello sbaglia in modo sistematico su qualche fas
    corretto e one-hot), sul prezzo e sul logaritmo del prezzo: 16 configurazioni, valutate con una
    cross-validation ripetuta 5 × 3 e con ricerca dell'iperparametro `alpha`.
 4. Scelta del modello finale (RMSE di cross-validation più basso) e valutazione sul test set.
-5. Feature engineering con termini di secondo grado per i due modelli migliori.
 
 ## Risultati principali
 - La regressione lineare **non va in overfitting** su questi dati: l'errore su case nuove è uguale a quello
@@ -39,11 +38,9 @@ pesano davvero sul prezzo? Il modello sbaglia in modo sistematico su qualche fas
   R² 0,68, praticamente come la regressione lineare semplice.
 - Le caratteristiche più influenti sono aria condizionata, numero di bagni, strada principale, zona
   preferita, numero di piani e area.
-- I termini di secondo grado sono l'unica modifica che sposta un po' l'errore (Elastic Net sul prezzo:
-  R² sul test da 0,685 a 0,705), ma il guadagno resta dentro la variabilità tra fold e costa molto in
-  leggibilità.
 - Tutti i modelli sottostimano le case più costose (di circa 1 milione in media): per ridurre l'errore
-  servono nuove informazioni sugli immobili, non modelli più complessi.
+  servono soprattutto nuove informazioni sugli immobili. Modelli più complessi (es. random forest)
+  potrebbero cogliere effetti non lineari, ma con poche feature e pochi dati il guadagno atteso è limitato.
 
 ## Come eseguire il notebook
 Serve Python 3.11 o successivo.
@@ -52,7 +49,7 @@ Serve Python 3.11 o successivo.
 python -m venv .venv
 .venv\Scripts\activate        # Windows (su macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
-jupyter notebook notebooks/01_confronto_modelli_regolarizzati.ipynb
+jupyter notebook notebooks/Regressione_lineare_housing.ipynb
 ```
 
 Il notebook legge il dataset direttamente dall'URL della consegna, quindi serve una connessione a
